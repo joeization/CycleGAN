@@ -18,7 +18,6 @@ from tqdm import trange, tqdm
 
 from CustomDataset import CustomDataset
 from discriminator import Discriminator
-from generator import Generator_v3
 from UNet import UNet
 from utility import center_crop
 

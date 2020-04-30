@@ -65,6 +65,13 @@ class CustomDataset():
             transforms.ToTensor(),
             transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),
         ])
+        self.transforms_no_scale = transforms.Compose([
+            # transforms.Grayscale(),
+            # transforms.Scale(size=(256, 256)),
+            # transforms.RandomCrop((32, 32)),
+            transforms.ToTensor(),
+            transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),
+        ])
 
     def __getitem__(self, index):
         '''
@@ -89,7 +96,7 @@ class CustomDataset():
             return t_image
 
         else:
-            t_image = self.transforms(image)
+            t_image = self.transforms_no_scale(image)
             # DatasetStorage.storage[index] = t_image.clone()
             # return DatasetStorage.storage[self.image_paths[index]].clone()
             return t_image

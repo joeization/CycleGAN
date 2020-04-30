@@ -14,13 +14,10 @@ import torchvision.transforms as transforms
 import torchvision.transforms.functional as TF
 from PIL import Image
 # from skimage import feature
+from tqdm import tqdm
 
-# from CustomDataset import CustomDataset
-# from discriminator_v2 import Discriminator, Discriminator_S1, Discriminator_S2
-# from generator_v2 import Generator_in, Generator, Generator2, GaussianNoise
-from generator_v3 import Generator_v3
-# from generator_v2_no_gau import Generator_in, Generator, Generator2
-# from utility import center_crop
+from CustomDataset import CustomDataset
+from UNet import UNet
 
 
 def KL_loss(mu, logvar):
@@ -42,34 +39,48 @@ def run():
     # Assuming that we are on a CUDA machine, this should print a CUDA device:
     print(device)
 
-    latent_s = 32
-    G = Generator_v3(latent_length=latent_s,
-                     hidden_length=2048).to(device)
+    G = UNet(3, 3).to(device)
+
     try:
-        G.load_state_dict(torch.load('./gen'))
-        # G.load_state_dict(torch.load('./V2_total_loss/gen'))
-        # D.load_state_dict(torch.load('./V2_total_loss/fcn2'))
+        G.load_state_dict(torch.load('./genx'))
         print('net loaded')
     except Exception as e:
         print(e)
 
     plt.ion()
+    dataset = 'ukiyoe2photo'
+
+    real_image = 'testB'
+    save_image = 'genA'
+    save_prefix = './datasets/'+dataset+'/'+save_image+'/'
+
+    image_path_B = './datasets/'+dataset+'/'+real_image+'/*'
+
+    plt.ion()
+
+    train_image_paths_B = glob.glob(image_path_B)
+    print(len(train_image_paths_B))
+
+    b_size = 1
+
+    train_dataset_B = CustomDataset(
+        train_image_paths_B, train=False)
+    train_loader_B = torch.utils.data.DataLoader(
+        train_dataset_B, batch_size=b_size, shuffle=False, num_workers=1, pin_memory=False)
 
     G.eval()
-    # ran = torch.autograd.Variable(torch.Tensor(
-    #     np.random.normal(0, 1, (1, 128)))).to(device)
+
     unloader = transforms.ToPILImage()
     with torch.no_grad():
-        for i in range(50):
-            print(i)
-            z = torch.autograd.Variable(torch.Tensor(
-                np.random.normal(0, 1, (1, latent_s)))).to(device)
-            gen, pz = G(z.detach())
-            z.requires_grad = False
+        loop = tqdm(train_loader_B, desc='inf')
+        idx = 1
+        for im in loop:
+            im = im.to(device)
+            gen = G(im)
             gen = (gen+1)/2.0
             im = unloader(gen.squeeze(0).cpu())
-            im.save('./generate/%02d.png' % i)
-            # im.save('./tb/'+str(i)+'ntb.png')
+            im.save(save_prefix+'%04d.jpg' % idx)
+            idx += 1
 
 
 if __name__ == '__main__':
